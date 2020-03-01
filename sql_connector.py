@@ -1,19 +1,22 @@
 import sqlite3
-import datetime
 
-def create_table_messages ():
-    connection2 = sqlite3.connect("settings.db")
-    cursor2 = connection2.cursor()
-    with connection2:
-        cursor2.execute("""CREATE TABLE messages(
-        id integer primary key autoincrement,
-        user_id integer,
-        message_id integer,
-        message_text text,
-        notifi_datetime datetime2);""")
-        connection2.commit()
+import psycopg2 as psycopg2
+import configparser
 
-#cursor2.execute("INSERT INTO GMT('ID', 'GMT') VALUES (?, ?)", (m.chat.id, m.text,))
+
+def create_connection ():
+    config = configparser.ConfigParser()
+    config.sections()
+    config.read('db.ini')
+    host = config['DB_CONNECTION']['host']
+    port = config['DB_CONNECTION']['port']
+    database = config['DB_CONNECTION']['database']
+    user = config['DB_CONNECTION']['user']
+    password = config['DB_CONNECTION']['password']
+
+    return psycopg2.connect(host=host, port=port, database=database, user=user, password=password)
+    #return psycopg2.connect('dbname={} user={} password={} host={} port={}'.format(database, user, password, host, port))
+
 
 def insert_message (user_id, message_id, message_text, notifi_datetime):
     connection2 = sqlite3.connect("settings.db")
@@ -51,31 +54,11 @@ def set_msg_sent (db_msg_id):
 
 
 if __name__ == '__main__':
-    #id = 1
-    """
-    string = get_active_msgs ()
-    for notifi in string:
-        notification_id = notifi[0]
-        user_id = notifi[1]
-        notification_datetime = notifi[3]
-        notification_status = notifi[4]
-        get_dt = datetime.datetime.strptime(notifi[4], '%Y-%m-%d %H:%M:%S')
-        if datetime.datetime.now() > get_dt:
-            #print ('yep')
-            set_msg_sent (notification_id)
-        #else:
-        #    print ('nope')
-        #print (get_dt)
-    string = get_active_msgs ()
-    print (string)
-    """
-    connection2 = sqlite3.connect("settings.db")
-    cursor2 = connection2.cursor()
-    with connection2:
-        #cursor2.execute(("SELECT 'ID' FROM GMT WHERE 'ID' = '{}'").format(m.chat.id))
-        cursor2.execute("SELECT GMT FROM GMT WHERE ID=?", (12312,))
-    try:
-        print (cursor2.fetchone()[0])
-        print ('asdasd')
-    except TypeError:
-        print ('0')
+     connection = create_connection ()
+     cursor = connection.cursor()
+     query = "select * from public.settings"
+     cursor.execute(query)
+     records = cursor.fetchall()
+     print (records)
+     for record in records:
+         print (record)
