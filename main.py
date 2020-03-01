@@ -5,12 +5,10 @@ import telebot
 from telebot import types
 from telebot import apihelper
 from multiprocessing import Process
-import schedule
 import time
 import datetime
 import sqlite3
 from sql_connector import insert_message, get_message_by_id, get_active_msgs, set_msg_sent
-import flask
 import json
 
 with open ('config.json') as json_file:
