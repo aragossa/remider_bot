@@ -8,21 +8,17 @@ from multiprocessing import Process
 import time
 import datetime
 import sqlite3
-from sql_connector import insert_message, get_message_by_id, get_active_msgs, set_msg_sent
+from sql_connector import insert_message, get_message_by_id, get_active_msgs, set_msg_sent, getConfig
 import json
 
-with open('config.json') as json_file:
-    config = json.load(json_file)
 
 connection = sqlite3.connect("settings.db")
 cursor = connection.cursor()
 
-token = config.get('config').get('api')
-states = {}
-msgs = {}
-cur_date = {}
-mesg_ids = {}
+
+token, proxy = getConfig ()
 bot = telebot.TeleBot(token)
+apihelper.proxies = {'https': 'https://{}'.format(proxy)}
 
 
 def get_gmt(id):
