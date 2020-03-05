@@ -8,51 +8,20 @@ from multiprocessing import Process
 import time
 import datetime
 import sqlite3
-from sql_connector import insert_message, get_message_by_id, get_active_msgs, set_msg_sent, getConfig
-import json
+from sql_connector import DbHelper
 
 
 connection = sqlite3.connect("settings.db")
 cursor = connection.cursor()
 
 
-token, proxy = getConfig ()
+token, proxy = DBConnector.getConfig()
 bot = telebot.TeleBot(token)
 apihelper.proxies = {'https': 'https://{}'.format(proxy)}
 
 
-def get_gmt(id):
-    connection2 = sqlite3.connect("settings.db")
-    cursor2 = connection2.cursor()
-    with connection2:
-        cursor2.execute("SELECT GMT FROM GMT WHERE ID=?", (id,))
-    try:
-        return cursor2.fetchone()[0]
-    except TypeError:
-        return '0'
 
 
-def get_show_time(uid, tg_server_time):
-    tg_server_time = datetime.datetime.utcfromtimestamp(int(tg_server_time))
-    connection2 = sqlite3.connect("settings.db")
-    cursor2 = connection2.cursor()
-    with connection2:
-        cursor2.execute("SELECT GMT FROM GMT WHERE ID=?", (uid,))
-    try:
-        gmt_val = cursor2.fetchone()[0]
-    except TypeError:
-        gmt_val = '0'
-
-    if gmt_val.count('+') == 1:
-        hours = int(gmt_val.replace('+', ''))
-        return tg_server_time + datetime.timedelta(hours=hours)
-
-    elif gmt_val.count('-') == 1:
-        hours = int(gmt_val.replace('-', ''))
-        return tg_server_time - datetime.timedelta(hours=hours)
-
-    else:
-        return tg_server_time
 
 
 def generate_user(id, username, last_name, first_name):
@@ -91,17 +60,12 @@ def setgmt(m):
 
 @bot.message_handler(commands=['showgmt'])
 def showgmt(m):
-    connection2 = sqlite3.connect("settings.db")
-    cursor2 = connection2.cursor()
-    with connection2:
-        cursor2.execute("SELECT GMT FROM GMT WHERE ID=?", (m.chat.id,))
+    dbhelper = DbHelper
+    gmtval = dbhelper.getGMT()
+    if gmtval == '0':
+        gmtval = 'Часовой пояс не задан и расчитывается как GMT 0, выполните команду /setgmt для установки'
 
-    try:
-        gmt_val = cursor2.fetchone()[0]
-    except TypeError:
-        gmt_val = 'Часовой пояс не задан и расчитывается как GMT 0, выполните команду /setgmt для установки'
-
-    bot.send_message(m.chat.id, '{}'.format(gmt_val))
+    bot.send_message(m.chat.id, '{}'.format(gmtval))
 
 
 @bot.message_handler(content_types=['video', 'photo', 'document'])
@@ -111,6 +75,7 @@ def start_handler(m):
 
 @bot.message_handler(content_types=['text'])
 def start_handler(m):
+    dbhelper = DbHelper
     if states.get(m.from_user.id) == 'set_time':
         try:
             user_gmt = get_gmt(m.chat.id)
@@ -151,6 +116,7 @@ def start_handler(m):
         check = count_m + count_p
         if check == 1:
             if m.text.replace('+', '').replace('-', '').isdigit():
+                dbhelper.getGMT()
                 connection2 = sqlite3.connect("settings.db")
                 cursor2 = connection2.cursor()
                 with connection2:
